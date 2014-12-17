@@ -975,14 +975,14 @@ bool idInventory::Give( idPlayer *owner, const idDict &spawnArgs, const char *st
  						weapons |= ( 1 << i );
 					}
  					tookWeapon = true;
+
+					if (!checkOnly && !alreadyHadWeapon) {
+						const idDict* dict;
+						dict = &owner->GetWeaponDef ( i )->dict;
+						weight += dict->GetInt("weight");
+					}
  				}
   			}
-		}
-
-		if (!checkOnly && tookWeapon && !alreadyHadWeapon) {
-			const idDict* dict;
-			dict = &owner->GetWeaponDef ( i )->dict;
-			weight += dict->GetInt("weight");
 		}
 
 		return tookWeapon;
