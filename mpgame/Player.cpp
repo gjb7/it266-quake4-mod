@@ -8725,9 +8725,6 @@ void idPlayer::AdjustSpeed( void ) {
 		speed *= 0.33f;
 	}
 
-	gameLocal.Printf("Speed: %f\n", speed);
-	gameLocal.Printf("Weight: %i\n", inventory.weight);
-
 	// All the weights are built assuming 80 is the default speed. Since it changes, figure out the ratio
 	// so that we can scale the weight.
 	double scale = speed / 80.0;
