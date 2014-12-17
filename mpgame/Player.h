@@ -266,6 +266,7 @@ public:
 	
 	int						secretAreasDiscovered;
 
+	// This may have been erroneously added as part of my initial commit. Adding a comment to mark this as something I added in a commit.
 	int						weight;
 };
 
