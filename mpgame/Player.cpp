@@ -8547,7 +8547,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		case IMPULSE_108:	break; // Unused
 		case IMPULSE_109:	AttemptToBuyItem( "weapon_napalmgun" );				break;
 		case IMPULSE_110:	/* AttemptToBuyItem( "weapon_dmg" );*/				break;
-		case IMPULSE_111:	break; // Unused
+		case IMPULSE_23:	gameLocal.Printf("Drop weapons"); DropAllWeaponsExceptMeleeWeapon(); break; // Unused
 		case IMPULSE_112:	break; // Unused
 		case IMPULSE_113:	break; // Unused
 		case IMPULSE_114:	break; // Unused
@@ -14176,4 +14176,24 @@ bool idPlayer::IsSpectatedClient( void ) const {
 		return true;
 	}
 	return false;
+}
+
+void idPlayer::DropAllWeaponsExceptMeleeWeapon() {
+	for (int i = 0; i < MAX_WEAPONS; i++) {
+		if ( ! ( inventory.weapons & ( 1 << i ) ) ) {
+			continue;
+		}
+
+		const idDict dict = GetWeaponDef ( i )->dict;
+		const char *name = dict.GetString("weaponname");
+
+		dict.Print();
+
+		if (!idStr::Cmp(name, "Gauntlet")) {
+			// Always skip over the melee weapon so we don't crash quake.
+			continue;
+		}
+
+		DropWeapon();
+	}
 }

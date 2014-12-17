@@ -1141,6 +1141,8 @@ private:
 	stateResult_t			State_Legs_Land					( const stateParms_t& parms );
 	stateResult_t			State_Legs_Dead					( const stateParms_t& parms );
 	
+	void					DropAllWeaponsExceptMeleeWeapon ();
+
  	CLASS_STATES_PROTOTYPE( idPlayer );
 };
 
