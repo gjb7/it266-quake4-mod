@@ -1022,8 +1022,6 @@ void idInventory::Drop( const idDict &spawnArgs, const char *weapon_classname, i
 	}
 	weapons &= ( 0xffffffff ^ ( 1 << weapon_index ) );
 
-	weight -= spawnArgs.GetInt("weight");
-
 	int ammo_i = AmmoIndexForWeaponClass( weapon_classname, NULL );
 	if ( ammo_i ) {
 		clip[ weapon_index ] = -1;
@@ -6060,6 +6058,9 @@ void idPlayer::DropWeapon( void ) {
 	// Delay aquire since the weapon is being thrown
 	if ( health > 0 ) {		
 		item->PostEventMS ( &EV_Activate, 500, item );
+
+		// We have to do this here instead of idInventory::Drop as we need a reference to the actual weapon's spawn args.
+		inventory.weight -= weapon->spawnArgs.GetInt("weight");
 
 		inventory.Drop( spawnArgs, item->spawnArgs.GetString( "inv_weapon" ), -1 );
 		NextWeapon();
@@ -14193,6 +14194,100 @@ void idPlayer::DropAllWeaponsExceptMeleeWeapon() {
 			continue;
 		}
 
-		DropWeapon();
+		SetWeapon(i);
+		DropCurrentWeaponNoSwitch();
+	}
+
+	NextWeapon();
+}
+
+void idPlayer::DropCurrentWeaponNoSwitch() {
+	idEntity*	item;
+	idDict		args;
+	const char*	itemClass;
+
+	assert( !gameLocal.isClient );
+
+	if( !gameLocal.isMultiplayer ) {
+		return;
+	}
+
+// RITUAL BEGIN
+// squirrel: don't drop weapons in Buying modes unless "always drop" is on
+	if( gameLocal.mpGame.IsBuyingAllowedInTheCurrentGameMode() && !gameLocal.serverInfo.GetBool( "si_dropWeaponsInBuyingModes" ) ) {
+		return;
+	}
+// RITUAL END
+
+ 	if ( spectating || weaponGone || !weapon ) {
+		return;
+	}
+
+	// Make sure the weapon is droppable	
+	itemClass = weapon->spawnArgs.GetString ( "def_dropItem" );
+	if ( !itemClass || !*itemClass ) {
+		return;
+	}
+		
+	// If still alive then the weapon is being thrown so start it a bit in front of the player
+	
+	// copy over the instance
+	args.SetInt( "instance", GetInstance() );
+
+	if ( health > 0 ) {		
+		idVec3 forward;
+		idVec3 up;
+		viewAngles.ToVectors( &forward, NULL, &up );
+		args.SetBool( "triggerFirst", true );
+		item = DropItem ( itemClass, args, 250.0f*forward + 150.0f*up );
+	} else {
+		item = DropItem ( itemClass, args );
+	}
+	
+	// Drop the weapon
+	if ( !item ) {
+		gameLocal.Warning ( "Player %d failed to drop weapon '%s'", entityNumber, weapon->spawnArgs.GetString ( "def_dropItem" ) );
+		return;
+	}
+
+	// Since this weapon was dropped, replace any starting ammo values with real ammo values
+	const idKeyValue* keyval = item->spawnArgs.MatchPrefix( "inv_start_ammo_" );
+	idDict newArgs;
+	while( keyval ) {
+		newArgs.Set( va( "inv_ammo_%s", keyval->GetKey().Right( keyval->GetKey().Length() - 15 ).c_str() ), keyval->GetValue().c_str() );
+		item->spawnArgs.Set( keyval->GetKey(), "" );
+		keyval = item->spawnArgs.MatchPrefix( "inv_start_ammo_", keyval );
+	}
+
+	item->spawnArgs.SetDefaults( &newArgs );
+
+	// Set the appropriate mods on the dropped item
+	int		i;
+	int		mods;
+	idStr	out;
+	mods = weapon->GetMods ( );
+	for ( i = 0; i < MAX_WEAPONMODS; i ++ ) {
+		if ( mods & (1<<i) ) {
+			if ( out.Length() ) {
+				out += ",";
+			}
+			out += weapon->spawnArgs.GetString ( va("def_mod%d", i+1) );
+		}
+	} 
+	if ( out.Length() ) {	
+		item->spawnArgs.Set ( "inv_weaponmod", out );
+	}
+
+	// Make sure the weapon removes itself over time.
+	item->PostEventMS ( &EV_Remove, WEAPON_DROP_TIME );
+
+	// Delay aquire since the weapon is being thrown
+	if ( health > 0 ) {		
+		item->PostEventMS ( &EV_Activate, 500, item );
+
+		// We have to do this here instead of idInventory::Drop as we need a reference to the actual weapon's spawn args.
+		inventory.weight -= weapon->spawnArgs.GetInt("weight");
+
+		inventory.Drop( spawnArgs, item->spawnArgs.GetString( "inv_weapon" ), -1 );
 	}
 }
