@@ -1339,8 +1339,6 @@ idPlayer::idPlayer() {
 	teamAmmoRegenPending	= false;
 	teamDoubler			= NULL;		
 	teamDoublerPending		= false;
-
-	weight = 0;
 }
 
 /*
