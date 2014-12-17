@@ -8679,7 +8679,8 @@ void idPlayer::EvaluateControls( void ) {
 	}
 
 	if ( ( usercmd.flags & UCF_IMPULSE_SEQUENCE ) != ( oldFlags & UCF_IMPULSE_SEQUENCE ) )  {
-		assert( false ); // unused in multiplayer?
+		// Disable this 
+		// assert( false ); // unused in multiplayer?
 		PerformImpulse( usercmd.impulse );
 	}
 
