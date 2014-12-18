@@ -14201,6 +14201,7 @@ void idPlayer::DropAllWeaponsExceptMeleeWeapon() {
 	NextWeapon();
 }
 
+// This is a modified version of DropWeapon that doesn't call NextWeapon() at the end of it.
 void idPlayer::DropCurrentWeaponNoSwitch() {
 	idEntity*	item;
 	idDict		args;
