@@ -5978,6 +5978,7 @@ DropWeapon
 void idPlayer::DropWeapon( void ) { //md369, Matt Downey, mattdwny, since the diff between DropWeapon and DropCurrentWeaponNoSwitch is the last line: if(health > 0) NextWeapon(), source: http://www.quickdiff.com/
 									//I would delegate the work from DropWeapon to DropCurrentWeaponNoSwitch to condense the number of lines.
 									//for absolute clarity: void idPlayer::DropWeapon( void ) { DropCurrentWeaponNoSwitch(); if(health > 0) NextWeapon(); } should work
+                                    // While true, I'd rather try to modify as little code in the Quake 4 engine as possible, to avoid potentially breaking things. - gjb7
 	idEntity*	item;
 	idDict		args;
 	const char*	itemClass;
@@ -8732,12 +8733,14 @@ void idPlayer::AdjustSpeed( void ) {
 	// All the weights are built assuming 80 is the default speed. Since it changes, figure out the ratio
 	// so that we can scale the weight.
 	double scale = speed / 80.0;
+    double speedAdjustment = (inventory.weight * scale / 2);
 
 	// MOD-TODO: Adjust speed based on weight.
-	speed = speed - (inventory.weight * scale / 2);// / 2);
+	speed = speed - speedAdjustment;
 
-	physicsObj.SetSpeed( speed, pm_crouchspeed.GetFloat() /* * (inventory.weight * scale / 2) */ ); // md369, Matt Downey, mattdwny: realistically, using the scale for the crouchspeed as well would be better,
-																									//I found a bug in another game where crouching makes you move faster, which isn't what you want
+	physicsObj.SetSpeed( speed, pm_crouchspeed.GetFloat() - speedAdjustment); // md369, Matt Downey, mattdwny: realistically, using the scale for the crouchspeed as well would be better,
+                                                                              //I found a bug in another game where crouching makes you move faster, which isn't what you want
+                                                                              // Interesting catch. I made the same adjustment to the crouchign speed. - gjb7
 }
 
 /*
@@ -14186,6 +14189,7 @@ bool idPlayer::IsSpectatedClient( void ) const {
 void idPlayer::DropAllWeaponsExceptMeleeWeapon() { ////md369, Matt Downey, mattdwny: the solution here is very elegant, good job
 	for (int i = 0; i < MAX_WEAPONS; i++) {
 		if ( ! ( inventory.weapons & ( 1 << i ) ) ) { ////md369, Matt Downey, mattdwny: I would personally do ((inventory.weapons >> i) & 0x1) == 0
+                                                      // Done like this because that's how it's done elesewhere in the code. - gjb7
 			continue;
 		}
 
@@ -14193,6 +14197,7 @@ void idPlayer::DropAllWeaponsExceptMeleeWeapon() { ////md369, Matt Downey, mattd
 		const char *name = dict.GetString("weaponname");
 
 		if (!idStr::Cmp(name, "Gauntlet")) { //md369, Matt Downey, mattdwny: compare returns -1, 0, 1, which isn't readily apparent from reading this line, consider == 0 instead
+                                             // This is how it's done elsewhere in the code. And this is the same as strcmp, which you should know if you're writing C. - gjb7
 			// Always skip over the melee weapon so we don't crash quake.
 			continue;
 		}
