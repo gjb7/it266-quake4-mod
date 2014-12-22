@@ -5975,7 +5975,9 @@ void idPlayer::RespawnFlags ( void ) {
 DropWeapon
 =================
 */
-void idPlayer::DropWeapon( void ) {
+void idPlayer::DropWeapon( void ) { //md369, Matt Downey, mattdwny, since the diff between DropWeapon and DropCurrentWeaponNoSwitch is the last line: if(health > 0) NextWeapon(), source: http://www.quickdiff.com/
+									//I would delegate the work from DropWeapon to DropCurrentWeaponNoSwitch to condense the number of lines.
+									//for absolute clarity: void idPlayer::DropWeapon( void ) { DropCurrentWeaponNoSwitch(); if(health > 0) NextWeapon(); } should work
 	idEntity*	item;
 	idDict		args;
 	const char*	itemClass;
@@ -8734,7 +8736,8 @@ void idPlayer::AdjustSpeed( void ) {
 	// MOD-TODO: Adjust speed based on weight.
 	speed = speed - (inventory.weight * scale / 2);// / 2);
 
-	physicsObj.SetSpeed( speed, pm_crouchspeed.GetFloat() );
+	physicsObj.SetSpeed( speed, pm_crouchspeed.GetFloat() /* * (inventory.weight * scale / 2) */ ); // md369, Matt Downey, mattdwny: realistically, using the scale for the crouchspeed as well would be better,
+																									//I found a bug in another game where crouching makes you move faster, which isn't what you want
 }
 
 /*
@@ -14180,16 +14183,16 @@ bool idPlayer::IsSpectatedClient( void ) const {
 	return false;
 }
 
-void idPlayer::DropAllWeaponsExceptMeleeWeapon() {
+void idPlayer::DropAllWeaponsExceptMeleeWeapon() { ////md369, Matt Downey, mattdwny: the solution here is very elegant, good job
 	for (int i = 0; i < MAX_WEAPONS; i++) {
-		if ( ! ( inventory.weapons & ( 1 << i ) ) ) {
+		if ( ! ( inventory.weapons & ( 1 << i ) ) ) { ////md369, Matt Downey, mattdwny: I would personally do ((inventory.weapons >> i) & 0x1) == 0
 			continue;
 		}
 
 		const idDict dict = GetWeaponDef ( i )->dict;
 		const char *name = dict.GetString("weaponname");
 
-		if (!idStr::Cmp(name, "Gauntlet")) {
+		if (!idStr::Cmp(name, "Gauntlet")) { //md369, Matt Downey, mattdwny: compare returns -1, 0, 1, which isn't readily apparent from reading this line, consider == 0 instead
 			// Always skip over the melee weapon so we don't crash quake.
 			continue;
 		}
@@ -14287,7 +14290,7 @@ void idPlayer::DropCurrentWeaponNoSwitch() {
 		item->PostEventMS ( &EV_Activate, 500, item );
 
 		// We have to do this here instead of idInventory::Drop as we need a reference to the actual weapon's spawn args.
-		inventory.weight -= weapon->spawnArgs.GetInt("weight");
+		inventory.weight -= weapon->spawnArgs.GetInt("weight"); //
 
 		inventory.Drop( spawnArgs, item->spawnArgs.GetString( "inv_weapon" ), -1 );
 	}
